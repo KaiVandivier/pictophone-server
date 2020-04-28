@@ -1,0 +1,16 @@
+{
+  "name": "telestrations-server",
+  "version": "1.0.0",
+  "description": "Server to handle Telestrations game logic with socket.io",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  }
+}
