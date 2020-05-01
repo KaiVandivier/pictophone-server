@@ -4,6 +4,7 @@ const socketIo = require("socket.io");
 
 const { startTimer } = require("./lib/timer");
 const { hardWords } = require("./lib/words");
+const runGame = require("./lib/game");
 
 const port = process.env.PORT || 4000;
 const app = express();
@@ -11,24 +12,19 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 io.on("connection", (socket) => {
-  console.log("New client connected, id: ", socket.id);
+  console.log(`New client id ${socket.id} connected`);
 
-  socket.emit("message", { message: "You connected successfully!" })
-
-  console.log("There are ", hardWords.length, " hard words");
-
-  socket.on("start-timer", () => {
-    console.log("received start-timer event");
-    startTimer(socket, 90);
-  })
+  socket.once("ready", () => {
+    runGame(socket);
+  });
 
   socket.on("disconnect", (socket) => {
-    console.log("Client disconnected")
-  })
+    console.log(`Client id ${socket.id} disconnected`);
+  });
 });
 
 app.get("/", (req, res) => {
   res.status(200).send("Get received");
-})
+});
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
