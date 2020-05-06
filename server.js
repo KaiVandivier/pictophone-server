@@ -29,16 +29,21 @@ function Room(id, creatorId) {
   this.creatorId = creatorId;
   this.players = [];
   this.phase = phases.WAITING;
+  this.isAllReady = function() {
+    return this.players.every(player => player.ready);
+  }
   // possible other fields:
   // replayData
   // turnCount
   // (other game tracking)
 }
 
-function Player(id) {
-  this.id = id;
+function Player(socket) {
+  this.id = socket.id;
+  // this.socket = socket; this causes an infinite loop on "room-update"
   this.name = null;
   this.ready = false;
+  this.replayData = { word: null, rounds: [] };
   this.toggleReady = function () {
     this.ready = !this.ready;
   };
@@ -47,18 +52,18 @@ function Player(id) {
 
 let rooms = [];
 
-function joinRoom(socket, roomId, player) {
+function joinRoom(socket, roomId) {
   // Join socket to room; return `new Room`
   if (Object.keys(socket.rooms).includes(roomId))
-    return socket.send("You're already in that room!");
+  return socket.send("You're already in that room!");
   const room = rooms.find((room) => room.id === roomId);
   if (!room) {
     socket.send("Room not found");
     return;
   }
-  room.players = [...room.players, new Player(socket.id)];
+  room.players = [...room.players, new Player(socket)];
   socket.join(room.id);
-  io.to(roomId).emit("room-update", room);
+  io.to(roomId).emit(msgs.ROOM_UPDATE, room);
   return room;
 }
 
@@ -94,8 +99,9 @@ io.on("connection", (socket) => {
     // Here is a possible place to check for "all ready" and listen for "start-game"
   });
 
-  socket.once("ready", () => {
-    // TODO: Modify this to "Start Game" and make a "Toggle ready" feature
+  socket.once(msgs.START_GAME, () => {
+    // const allReady = currentRoom.players.every(({ ready }) => ready);
+    if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!")
     runGame(socket, io, currentRoom);
   });
 
@@ -106,7 +112,7 @@ io.on("connection", (socket) => {
       currentRoom.players = currentRoom.players.filter(
         ({ id }) => id !== socket.id
       );
-      io.to(currentRoom.id).emit("room-update", currentRoom);
+      io.to(currentRoom.id).emit(msgs.ROOM_UPDATE, currentRoom);
     }
     // What happens when the socket is the room creator?
     // TODO: Handle handoff to another player
