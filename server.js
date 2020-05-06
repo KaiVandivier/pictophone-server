@@ -32,6 +32,11 @@ function Room(id, creatorId) {
   this.isAllReady = function() {
     return this.players.every(player => player.ready);
   }
+  this.clearReadies = function() {
+    this.players.forEach(player => player.ready = false);
+    // "replacement" instead of "mutation":
+    // this.players = this.players.map(player => ({ ...player, ready = false }))
+  }
   // possible other fields:
   // replayData
   // turnCount
