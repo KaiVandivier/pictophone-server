@@ -88,12 +88,12 @@ io.on("connection", (socket) => {
     currentRoom = joinRoom(socket, roomId);
   });
 
-  socket.on(msgs.JOIN_ROOM, ({ roomId }) => {
+  socket.on(msgs.JOIN_ROOM, (roomId) => {
     currentRoom = joinRoom(socket, roomId);
   });
 
   socket.on(msgs.GET_ROOMS, () => {
-    socket.emit(msgs.ALL_ROOMS, { roomIds: rooms.map(({ id }) => id) });
+    socket.emit(msgs.ALL_ROOMS, rooms.map(({ id }) => id));
   });
 
   // TODO: This should only happen once a player is inside a room ~
