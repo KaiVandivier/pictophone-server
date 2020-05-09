@@ -8,17 +8,16 @@ const msgs = require("./lib/messages");
 const port = process.env.PORT || 4000;
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
-io.origins((origin, callback) => {
-  if (
-    ![
-      "https://pictophone.kpvandivier.now.sh",
-      "http://localhost:3000",
-    ].includes(origin)
-  ) {
-    return callback("origin not allowed", false);
+const io = socketIo(server, {
+  handlePreflightRequest: (req, res) => {
+      const headers = {
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
+          "Access-Control-Allow-Credentials": true
+      };
+      res.writeHead(200, headers);
+      res.end();
   }
-  callback(null, true);
 });
 
 // const phases = Object.freeze({
