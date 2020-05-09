@@ -8,17 +8,18 @@ const msgs = require("./lib/messages");
 const port = process.env.PORT || 4000;
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  handlePreflightRequest: (req, res) => {
-      const headers = {
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
-          "Access-Control-Allow-Credentials": true
-      };
-      res.writeHead(200, headers);
-      res.end();
-  }
-});
+const io = socketIo(server)
+// , {
+//   handlePreflightRequest: (req, res) => {
+//       const headers = {
+//           "Access-Control-Allow-Headers": "Content-Type, Authorization",
+//           "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
+//           "Access-Control-Allow-Credentials": true
+//       };
+//       res.writeHead(200, headers);
+//       res.end();
+//   }
+// });
 
 // const phases = Object.freeze({
 //   WAITING: "waiting",
