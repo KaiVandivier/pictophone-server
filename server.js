@@ -10,25 +10,20 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-/**
- * Get players in a room with `io.in(room).clients((err, clients) => {})`;
- * Get rooms a player is in with `socket.rooms`
- *
- */
+// const phases = Object.freeze({
+//   WAITING: "waiting",
+//   CHOOSING_WORD: "choosing-word",
+//   DRAWING: "drawing",
+//   GUESSING: "guessing",
+//   REPLAY: "replay",
+// });
 
-const phases = Object.freeze({
-  WAITING: "waiting",
-  CHOOSING_WORD: "choosing-word",
-  DRAWING: "drawing",
-  GUESSING: "guessing",
-  REPLAY: "replay",
-});
-
-function Room(id, creatorId) {
+function Room(id, creatorId, playerName) {
   this.id = id;
+  this.name = `${playerName}'s room`;
   this.creatorId = creatorId;
   this.players = [];
-  this.phase = phases.WAITING;
+  // this.phase = phases.WAITING;
   this.isAllReady = function() {
     return this.players.every(player => player.ready);
   }
@@ -37,27 +32,21 @@ function Room(id, creatorId) {
     // "replacement" instead of "mutation":
     // this.players = this.players.map(player => ({ ...player, ready = false }))
   }
-  // possible other fields:
-  // replayData
-  // turnCount
-  // (other game tracking)
 }
 
-function Player(socket) {
+function Player(socket, playerName) {
   this.id = socket.id;
-  // this.socket = socket; this causes an infinite loop on "room-update"
-  this.name = null;
+  this.name = playerName;
   this.ready = false;
   this.replayData = { word: null, rounds: [] };
   this.toggleReady = function () {
     this.ready = !this.ready;
   };
-  // this.roomId = null;
 }
 
 let rooms = [];
 
-function joinRoom(socket, roomId) {
+function joinRoom(socket, roomId, playerName) {
   // Join socket to room; return `new Room`
   if (Object.keys(socket.rooms).includes(roomId))
   return socket.send("You're already in that room!");
@@ -66,7 +55,7 @@ function joinRoom(socket, roomId) {
     socket.send("Room not found");
     return;
   }
-  room.players = [...room.players, new Player(socket)];
+  room.players = [...room.players, new Player(socket, playerName)];
   socket.join(room.id);
   io.to(roomId).emit(msgs.ROOM_UPDATE, room);
   return room;
@@ -76,20 +65,18 @@ io.on("connection", (socket) => {
   console.log(`New client id ${socket.id} connected`);
   let currentRoom;
 
-  socket.once("get-data", (ack) => ack(["I'm", "a", "test", "array"]));
-
-  socket.on(msgs.CREATE_ROOM, () => {
+  socket.on(msgs.CREATE_ROOM, (playerName) => {
     const roomId = `rm${socket.id}`;
     if (rooms.some(({ id }) => id === roomId))
       return socket.send("You have already created that room");
     // create and join room
-    rooms.push(new Room(roomId, socket.id));
+    rooms.push(new Room(roomId, socket.id, playerName));
     socket.send(`Room ${roomId} created`);
-    currentRoom = joinRoom(socket, roomId);
+    currentRoom = joinRoom(socket, roomId, playerName);
   });
 
-  socket.on(msgs.JOIN_ROOM, (roomId) => {
-    currentRoom = joinRoom(socket, roomId);
+  socket.on(msgs.JOIN_ROOM, (roomId, playerName) => {
+    currentRoom = joinRoom(socket, roomId, playerName);
   });
 
   socket.on(msgs.GET_ROOMS, () => {
