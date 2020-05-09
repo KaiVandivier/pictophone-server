@@ -9,7 +9,8 @@ const port = process.env.PORT || 4000;
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  origins: ["https://pictophone.kpvandivier.now.sh", "http://localhost:3000"],
+  // TODO: Make this an environment variable
+  origins: ["https://pictophone.kpvandivier.now.sh", "http://localhost:3000", "*:*"],
 });
 
 // const phases = Object.freeze({
