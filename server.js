@@ -8,7 +8,9 @@ const msgs = require("./lib/messages");
 const port = process.env.PORT || 4000;
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  origins: ["https://pictophone.kpvandivier.now.sh", "http://localhost:3000"],
+});
 
 // const phases = Object.freeze({
 //   WAITING: "waiting",
@@ -24,14 +26,14 @@ function Room(id, creatorId, playerName) {
   this.creatorId = creatorId;
   this.players = [];
   // this.phase = phases.WAITING;
-  this.isAllReady = function() {
-    return this.players.every(player => player.ready);
-  }
-  this.clearReadies = function() {
-    this.players.forEach(player => player.ready = false);
+  this.isAllReady = function () {
+    return this.players.every((player) => player.ready);
+  };
+  this.clearReadies = function () {
+    this.players.forEach((player) => (player.ready = false));
     // "replacement" instead of "mutation":
     // this.players = this.players.map(player => ({ ...player, ready = false }))
-  }
+  };
 }
 
 function Player(socket, playerName) {
@@ -49,7 +51,7 @@ let rooms = [];
 function joinRoom(socket, roomId, playerName) {
   // Join socket to room; return `new Room`
   if (Object.keys(socket.rooms).includes(roomId))
-  return socket.send("You're already in that room!");
+    return socket.send("You're already in that room!");
   const room = rooms.find((room) => room.id === roomId);
   if (!room) {
     socket.send("Room not found");
@@ -80,7 +82,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on(msgs.GET_ROOMS, () => {
-    socket.emit(msgs.ALL_ROOMS, rooms.map(({ id }) => id));
+    socket.emit(
+      msgs.ALL_ROOMS,
+      rooms.map(({ id }) => id)
+    );
   });
 
   // TODO: This should only happen once a player is inside a room ~
@@ -93,7 +98,7 @@ io.on("connection", (socket) => {
 
   socket.once(msgs.START_GAME, () => {
     // const allReady = currentRoom.players.every(({ ready }) => ready);
-    if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!")
+    if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
     runGame(socket, io, currentRoom);
   });
 
