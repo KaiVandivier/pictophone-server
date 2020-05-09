@@ -8,9 +8,17 @@ const msgs = require("./lib/messages");
 const port = process.env.PORT || 4000;
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  // TODO: Make this an environment variable
-  origins: ["https://pictophone.kpvandivier.now.sh", "http://localhost:3000", "*:*"],
+const io = socketIo(server);
+io.origins((origin, callback) => {
+  if (
+    ![
+      "https://pictophone.kpvandivier.now.sh",
+      "http://localhost:3000",
+    ].includes(origin)
+  ) {
+    return callback("origin not allowed", false);
+  }
+  callback(null, true);
 });
 
 // const phases = Object.freeze({
