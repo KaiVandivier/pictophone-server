@@ -52,6 +52,9 @@ function joinRoom(socket, roomId, playerName) {
   return room;
 }
 
+/**
+ * Handle players on socket.io connection
+ */
 io.on("connection", (socket) => {
   console.log(`New client id ${socket.id} connected`);
   let currentRoom;
@@ -70,11 +73,8 @@ io.on("connection", (socket) => {
     currentRoom = joinRoom(socket, roomId, playerName);
   });
 
-  socket.on(msgs.GET_ROOMS, () => {
-    socket.emit(
-      msgs.ALL_ROOMS,
-      rooms.map(({ id }) => id)
-    );
+  socket.on(msgs.GET_ROOMS, (ack) => {
+    ack(rooms.map(({ id, name }) => ({ id, name })));
   });
 
   // TODO: This should only happen once a player is inside a room ~
