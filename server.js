@@ -15,6 +15,7 @@ function Room(id, hostId, playerName) {
   this.name = `${playerName}'s room`;
   this.hostId = hostId;
   this.players = [];
+  this.open = true;
   this.isAllReady = function () {
     return this.players.every((player) => player.ready);
   };
@@ -41,26 +42,26 @@ function joinRoom(socket, roomId, playerName) {
   // Join socket to room; return `new Room`
   if (Object.keys(socket.rooms).includes(roomId))
     return socket.send("You're already in that room!");
+
   const room = rooms.find((room) => room.id === roomId);
-  if (!room)
-    return socket.send("Oops! Can't find that room.");
-  room.players = [...room.players, new Player(socket, playerName)];
+  if (!room) return socket.send("Oops! Can't find that room.");
+  if (!room.open) return socket.send("Oops! That room is closed.");
+
   socket.join(room.id);
+  room.players = [...room.players, new Player(socket, playerName)];
   io.to(roomId).emit(msgs.ROOM_UPDATE, room);
   return room;
 }
 
 function leaveRoom(socket, roomId) {
   // get room by ID
-  const room = rooms.find(({ id }) => id === roomId)
+  const room = rooms.find(({ id }) => id === roomId);
   if (!room) return socket.send("Oops! Can't leave that room.");
 
   // Disconnect socket from room
   socket.leave(room.id);
   // Remove player from room
-  room.players = room.players.filter(
-    ({ id }) => id !== socket.id
-  );
+  room.players = room.players.filter(({ id }) => id !== socket.id);
   // Remove the room if it's empty
   if (room.players.length === 0) {
     rooms = rooms.filter(({ id }) => id !== room.id);
@@ -69,7 +70,7 @@ function leaveRoom(socket, roomId) {
   // Hand off `host` to another player if necessary
   if (room.hostId === socket.id) {
     room.hostId = room.players[0].id;
-    room.name = `${room.players[0].name}'s Room`
+    room.name = `${room.players[0].name}'s Room`;
   }
   io.to(room.id).emit(msgs.ROOM_UPDATE, room);
   return null;
@@ -99,10 +100,11 @@ io.on("connection", (socket) => {
     if (!currentRoom) return socket.send("Not in a room!");
     currentRoom = leaveRoom(socket, currentRoom.id); // i.e. `null`
     socket.emit(msgs.ROOM_UPDATE, null);
-  })
+  });
 
   socket.on(msgs.GET_ROOMS, (ack) => {
-    ack(rooms.map(({ id, name }) => ({ id, name })));
+    // Return `open` rooms
+    ack(rooms.filter(({ open }) => open).map(({ id, name }) => ({ id, name })));
   });
 
   // TODO: This should only happen once a player is inside a room ~
