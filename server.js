@@ -20,9 +20,13 @@ function Room(id, hostId, playerName) {
     return this.players.every((player) => player.ready);
   };
   this.clearReadies = function () {
-    this.players.forEach((player) => (player.ready = false));
-    // "replacement" instead of "mutation":
-    // this.players = this.players.map(player => ({ ...player, ready = false }))
+    this.players = this.players.map(player => ({ ...player, ready: false }))
+  };
+  this.clearReplayData = function () {
+    this.players = this.players.map((player) => ({
+      ...player,
+      replayData: { word: null, rounds: [] },
+    }));
   };
 }
 
@@ -116,7 +120,7 @@ io.on("connection", (socket) => {
     // instead of having "start game" be open all the time
   });
 
-  socket.once(msgs.START_GAME, () => {
+  socket.on(msgs.START_GAME, () => {
     if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
     runGame(socket, io, currentRoom);
   });
