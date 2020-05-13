@@ -10,10 +10,10 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-function Room(id, creatorId, playerName) {
+function Room(id, hostId, playerName) {
   this.id = id;
   this.name = `${playerName}'s room`;
-  this.creatorId = creatorId;
+  this.hostId = hostId;
   this.players = [];
   this.isAllReady = function () {
     return this.players.every((player) => player.ready);
@@ -42,14 +42,37 @@ function joinRoom(socket, roomId, playerName) {
   if (Object.keys(socket.rooms).includes(roomId))
     return socket.send("You're already in that room!");
   const room = rooms.find((room) => room.id === roomId);
-  if (!room) {
-    socket.send("Room not found");
-    return;
-  }
+  if (!room)
+    return socket.send("Oops! Can't find that room.");
   room.players = [...room.players, new Player(socket, playerName)];
   socket.join(room.id);
   io.to(roomId).emit(msgs.ROOM_UPDATE, room);
   return room;
+}
+
+function leaveRoom(socket, roomId) {
+  // get room by ID
+  const room = rooms.find(({ id }) => id === roomId)
+  if (!room) return socket.send("Oops! Can't leave that room.");
+
+  // Disconnect socket from room
+  socket.leave(room.id);
+  // Remove player from room
+  room.players = room.players.filter(
+    ({ id }) => id !== socket.id
+  );
+  // Remove the room if it's empty
+  if (room.players.length === 0) {
+    rooms = rooms.filter(({ id }) => id !== room.id);
+    return null;
+  }
+  // Hand off `host` to another player if necessary
+  if (room.hostId === socket.id) {
+    room.hostId = room.players[0].id;
+    room.name = `${room.players[0].name}'s Room`
+  }
+  io.to(room.id).emit(msgs.ROOM_UPDATE, room);
+  return null;
 }
 
 /**
@@ -65,13 +88,18 @@ io.on("connection", (socket) => {
       return socket.send("You have already created that room");
     // create and join room
     rooms.push(new Room(roomId, socket.id, playerName));
-    socket.send(`Room ${roomId} created`);
     currentRoom = joinRoom(socket, roomId, playerName);
   });
 
   socket.on(msgs.JOIN_ROOM, (roomId, playerName) => {
     currentRoom = joinRoom(socket, roomId, playerName);
   });
+
+  socket.on(msgs.LEAVE_ROOM, () => {
+    if (!currentRoom) return socket.send("Not in a room!");
+    currentRoom = leaveRoom(socket, currentRoom.id); // i.e. `null`
+    socket.emit(msgs.ROOM_UPDATE, null);
+  })
 
   socket.on(msgs.GET_ROOMS, (ack) => {
     ack(rooms.map(({ id, name }) => ({ id, name })));
@@ -93,22 +121,13 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     // TODO: Handle reconnect (ex: "would you like to reconnect as player ____?")
-    if (currentRoom) {
-      console.log(currentRoom);
-      currentRoom.players = currentRoom.players.filter(
-        ({ id }) => id !== socket.id
-      );
-      io.to(currentRoom.id).emit(msgs.ROOM_UPDATE, currentRoom);
-    }
-    // What happens when the socket is the room creator?
-    // TODO: Handle handoff to another player
-    rooms = rooms.filter(({ creatorId }) => creatorId !== socket.id);
+    if (currentRoom) leaveRoom(socket, currentRoom.id);
     console.log(`Client id ${socket.id} disconnected`);
   });
 });
 
 app.get("/", (req, res) => {
-  res.status(200).send("Get received");
+  res.status(200).send("GET received");
 });
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
