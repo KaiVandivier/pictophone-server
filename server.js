@@ -25,7 +25,7 @@ function Room(id, hostId, playerName) {
   this.clearReplayData = function () {
     this.players = this.players.map((player) => ({
       ...player,
-      replayData: { word: null, rounds: [] },
+      replayData: [],
     }));
   };
 }
@@ -34,7 +34,7 @@ function Player(socket, playerName) {
   this.id = socket.id;
   this.name = playerName;
   this.ready = false;
-  this.replayData = { word: null, rounds: [] };
+  this.replayData = [];
   this.toggleReady = function () {
     this.ready = !this.ready;
   };

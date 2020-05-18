@@ -21,7 +21,7 @@ test("it updates replayData in room", async () => {
   await getDataFromRoom(fakeRoom, fakeSockets, "drawing", 0);
 
   const newReplayData = fakeRoom.players.map(
-    (player) => player.replayData.rounds
+    (player) => player.replayData
   );
   // console.log(newReplayData);
   expect(newReplayData).toEqual([
@@ -41,7 +41,7 @@ test("it sends data to right players", async () => {
   await getDataFromRoom(fakeRoom, fakeSockets, "drawing", 2);
 
   const newReplayData = fakeRoom.players.map(
-    (player) => player.replayData.rounds
+    (player) => player.replayData
   );
   // console.log(newReplayData);
   expect(newReplayData).toEqual([
