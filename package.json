@@ -4,7 +4,7 @@
   "description": "Server to handle Pictophone game logic with socket.io",
   "main": "server.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --watch",
     "start": "node server.js",
     "dev": "DEBUG=socket.io:client,socket.io:socket nodemon --inspect server.js"
   },
@@ -15,6 +15,7 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "jest": "^26.0.1",
     "nodemon": "^2.0.3"
   }
 }
