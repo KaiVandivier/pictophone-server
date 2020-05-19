@@ -20,15 +20,25 @@ test("it updates replayData in room", async () => {
 
   await getDataFromRoom(fakeRoom, fakeSockets, "drawing", 0);
 
-  const newReplayData = fakeRoom.players.map(
-    (player) => player.replayData
-  );
+  const newReplayData = fakeRoom.players.map((player) => player.replayData);
   // console.log(newReplayData);
   expect(newReplayData).toEqual([
-    [ { type: 'drawing', data: 'data', playerName: 'Player 1' } ],
-    [ { type: 'drawing', data: 'data', playerName: 'Player 2' } ],
-    [ { type: 'drawing', data: 'data', playerName: 'Player 3' } ],
-    [ { type: 'drawing', data: 'data', playerName: 'Player 4' } ]
+    [
+      { type: "word", data: "Word 1", playerName: "Player 1" },
+      { type: "drawing", data: "data", playerName: "Player 1" },
+    ],
+    [
+      { type: "word", data: "Word 2", playerName: "Player 2" },
+      { type: "drawing", data: "data", playerName: "Player 2" },
+    ],
+    [
+      { type: "word", data: "Word 3", playerName: "Player 3" },
+      { type: "drawing", data: "data", playerName: "Player 3" },
+    ],
+    [
+      { type: "word", data: "Word 4", playerName: "Player 4" },
+      { type: "drawing", data: "data", playerName: "Player 4" },
+    ],
   ]);
 });
 
@@ -40,14 +50,24 @@ test("it sends data to right players", async () => {
 
   await getDataFromRoom(fakeRoom, fakeSockets, "drawing", 2);
 
-  const newReplayData = fakeRoom.players.map(
-    (player) => player.replayData
-  );
+  const newReplayData = fakeRoom.players.map((player) => player.replayData);
   // console.log(newReplayData);
   expect(newReplayData).toEqual([
-      [ { type: 'drawing', data: 'data', playerName: 'Player 3' } ],
-      [ { type: 'drawing', data: 'data', playerName: 'Player 4' } ],
-      [ { type: 'drawing', data: 'data', playerName: 'Player 1' } ],
-      [ { type: 'drawing', data: 'data', playerName: 'Player 2' } ]
-    ]);
+    [
+      { type: "word", data: "Word 1", playerName: "Player 1" },
+      { type: "drawing", data: "data", playerName: "Player 3" },
+    ],
+    [
+      { type: "word", data: "Word 2", playerName: "Player 2" },
+      { type: "drawing", data: "data", playerName: "Player 4" },
+    ],
+    [
+      { type: "word", data: "Word 3", playerName: "Player 3" },
+      { type: "drawing", data: "data", playerName: "Player 1" },
+    ],
+    [
+      { type: "word", data: "Word 4", playerName: "Player 4" },
+      { type: "drawing", data: "data", playerName: "Player 2" },
+    ],
+  ]);
 });
