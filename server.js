@@ -125,7 +125,8 @@ io.on("connection", (socket) => {
     runGame(socket, io, currentRoom);
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", (reason) => {
+    console.log("Disconnected - reason: ", reason);
     // TODO: Handle reconnect (ex: "would you like to reconnect as player ____?")
     if (currentRoom) leaveRoom(socket, currentRoom.id);
     console.log(`Client id ${socket.id} disconnected`);
