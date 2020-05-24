@@ -20,7 +20,7 @@ function Room(id, hostId, playerName) {
     return this.players.every((player) => player.ready);
   };
   this.clearReadies = function () {
-    this.players = this.players.map(player => ({ ...player, ready: false }))
+    this.players = this.players.map((player) => ({ ...player, ready: false }));
   };
   this.clearReplayData = function () {
     this.players = this.players.map((player) => ({
@@ -93,6 +93,10 @@ io.on("connection", (socket) => {
       return socket.send("You have already created that room");
     // create and join room
     rooms.push(new Room(roomId, socket.id, playerName));
+    io.emit(
+      msgs.OPEN_ROOMS,
+      rooms.filter(({ open }) => open).map(({ id, name }) => ({ id, name }))
+    );
     currentRoom = joinRoom(socket, roomId, playerName);
   });
 
@@ -111,9 +115,8 @@ io.on("connection", (socket) => {
     ack(rooms.filter(({ open }) => open).map(({ id, name }) => ({ id, name })));
   });
 
-  // TODO: This should only happen once a player is inside a room ~
-  // TODO: Turn this off somewhere?
   socket.on(msgs.TOGGLE_READY, () => {
+    if (!currentRoom) return socket.send("Oops! There's no room.");
     currentRoom.players.find(({ id }) => id === socket.id).toggleReady();
     io.to(currentRoom.id).emit(msgs.ROOM_UPDATE, currentRoom);
     // Here is a possible place to check for "all ready" and listen for "start-game"
@@ -121,15 +124,15 @@ io.on("connection", (socket) => {
   });
 
   socket.on(msgs.START_GAME, () => {
+    if (!currentRoom) return socket.send("Oops! There's no room.");
     if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
     runGame(socket, io, currentRoom);
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("Disconnected - reason: ", reason);
     // TODO: Handle reconnect (ex: "would you like to reconnect as player ____?")
     if (currentRoom) leaveRoom(socket, currentRoom.id);
-    console.log(`Client id ${socket.id} disconnected`);
+    console.log(`Client id ${socket.id} disconnected - reason: ${reason}`);
   });
 });
 
