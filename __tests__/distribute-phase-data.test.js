@@ -24,7 +24,7 @@ test("it sends data to players", async () => {
   // console.log(emit.mock.calls);
   expect(emit.mock.calls.length).toBe(fakeRoom.players.length);
   expect(emit.mock.calls[0][0]).toBe("load-drawing-phase");
-  expect(emit.mock.calls[0][1]).toBe("Word 1");
+  expect(emit.mock.calls[0][1]).toEqual({"data": "Word 1", "playerName": "Player 1", "type": "word"});
   expect(typeof emit.mock.calls[0][2]).toBe("function");
 });
 
@@ -38,5 +38,5 @@ test("it sends data to right players (i.e., handles phase shift)", async () => {
   );
 
   // console.log(emit.mock.calls);
-  expect(emit.mock.calls[0][1]).toBe("Word 3");
+  expect(emit.mock.calls[0][1]).toEqual({"data": "Word 3", "playerName": "Player 3", "type": "word"});
 });
