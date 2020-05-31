@@ -64,9 +64,9 @@ function leaveRoom(socket, roomId) {
 
   // Disconnect socket from room
   socket.leave(room.id);
-  // Remove player from room
+  // Remove player from `Room` object
   room.players = room.players.filter(({ id }) => id !== socket.id);
-  // Remove the room if it's empty
+  // Remove the Room if it's empty
   if (room.players.length === 0) {
     rooms = rooms.filter(({ id }) => id !== room.id);
     return null;
@@ -77,7 +77,6 @@ function leaveRoom(socket, roomId) {
     room.name = `${room.players[0].name}'s Room`;
   }
   io.to(room.id).emit(msgs.ROOM_UPDATE, room);
-  return null;
 }
 
 /**
@@ -86,6 +85,8 @@ function leaveRoom(socket, roomId) {
 io.on("connection", (socket) => {
   console.log(`New client id ${socket.id} connected`);
   let currentRoom;
+  // Clear client's previous room view if reconnecting:
+  socket.emit(msgs.ROOM_UPDATE, null);
 
   socket.on(msgs.CREATE_ROOM, (playerName) => {
     const roomId = `rm${socket.id}`;
@@ -105,8 +106,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on(msgs.LEAVE_ROOM, () => {
-    if (!currentRoom) return socket.send("Not in a room!");
-    currentRoom = leaveRoom(socket, currentRoom.id); // i.e. `null`
+    if (currentRoom)
+      leaveRoom(socket, currentRoom.id);
+      currentRoom = null;
     socket.emit(msgs.ROOM_UPDATE, null);
   });
 
@@ -116,7 +118,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on(msgs.TOGGLE_READY, () => {
-    if (!currentRoom) return socket.send("Oops! There's no room.");
+    if (!currentRoom) {
+      socket.emit(msgs.ROOM_UPDATE, null);
+      return socket.send("Oops! That room doesn't exist any more.");
+    }
     currentRoom.players.find(({ id }) => id === socket.id).toggleReady();
     io.to(currentRoom.id).emit(msgs.ROOM_UPDATE, currentRoom);
     // Here is a possible place to check for "all ready" and listen for "start-game"
@@ -124,7 +129,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on(msgs.START_GAME, () => {
-    if (!currentRoom) return socket.send("Oops! There's no room.");
+    if (!currentRoom) {
+      socket.emit(msgs.ROOM_UPDATE, null);
+      return socket.send("Oops! That room doesn't exist any more.");
+    }
     if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
     runGame(socket, io, currentRoom);
   });
