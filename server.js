@@ -128,13 +128,13 @@ io.on("connection", (socket) => {
     // instead of having "start game" be open all the time
   });
 
-  socket.on(msgs.START_GAME, () => {
+  socket.on(msgs.START_GAME, (options) => { // TODO: get options
     if (!currentRoom) {
       socket.emit(msgs.ROOM_UPDATE, null);
       return socket.send("Oops! That room doesn't exist any more.");
     }
     if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
-    runGame(socket, io, currentRoom);
+    runGame(socket, io, currentRoom, options);
   });
 
   socket.on("disconnect", (reason) => {
