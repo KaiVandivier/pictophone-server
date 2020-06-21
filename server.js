@@ -16,6 +16,10 @@ function Room(id, hostId, playerName) {
   this.hostId = hostId;
   this.players = [];
   this.open = true;
+  this.gameOptions = {
+    passWordOnOdd: false,
+    useHarderWords: false,
+  }
   this.isAllReady = function () {
     return this.players.every((player) => player.ready);
   };
@@ -128,13 +132,14 @@ io.on("connection", (socket) => {
     // instead of having "start game" be open all the time
   });
 
-  socket.on(msgs.START_GAME, (options) => { // TODO: get options
+  socket.on(msgs.START_GAME, (gameOptions) => {
     if (!currentRoom) {
       socket.emit(msgs.ROOM_UPDATE, null);
       return socket.send("Oops! That room doesn't exist any more.");
     }
-    if (!currentRoom.isAllReady()) return socket.send("Not everyone is ready!");
-    runGame(socket, io, currentRoom, options);
+    if (!currentRoom.isAllReady()) return socket.send("Oops! Not everyone is ready!");
+    currentRoom.gameOptions = { ...gameOptions };
+    runGame(socket, io, currentRoom, gameOptions);
   });
 
   socket.on("disconnect", (reason) => {
